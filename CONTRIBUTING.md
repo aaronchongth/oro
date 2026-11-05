@@ -20,7 +20,7 @@ There are several ways to contribute:
 ## Development Setup
 
 Follow the instructions in [README-dev.md](README-dev.md) to set up your local
-development environment. In short, you will need Node.js v22, Meteor 3.4,
+development environment. In short, you will need Node.js v24, Meteor 3.5.3,
 Docker Compose, and Terraform.
 
 ## Coding Standards
