@@ -19,8 +19,8 @@ Thank you for your interest in contributing to OpenRobOps! This project is open 
 
 | Tool | Version | Install |
 |------|---------|---------|
-| Node.js | v22 | Via [nvm](https://github.com/nvm-sh/nvm) |
-| Meteor | 3.4 | `npx meteor` |
+| Node.js | v24 | Via [nvm](https://github.com/nvm-sh/nvm) |
+| Meteor | 3.5.3 | `npx meteor` |
 | Docker | With Compose plugin | `docker compose` |
 | Terraform | Latest | [hashicorp.com](https://developer.hashicorp.com/terraform) |
 | tmux | Any | Package manager |
@@ -32,8 +32,12 @@ Thank you for your interest in contributing to OpenRobOps! This project is open 
 git clone https://github.com/OpenRobOps/oro.git
 cd oro
 
-# Generate settings (optionally try with `--plan` first)
+# Configure at least one login method + admin_emails in terraform/local.tfvars
+# (see Quick Start step 2), then generate settings:
 ./scripts/generate-settings.sh
+
+# Authenticate with GitHub Packages (classic PAT with read:packages) for @openrobops/iso21423
+npm config set //npm.pkg.github.com/:_authToken="<your-github-classic-pat>"
 
 # Install dependencies
 cd app && npm install

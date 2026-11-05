@@ -105,4 +105,4 @@ The sidecar (`sim-flatland/iso-agent/`, ~250 lines of JavaScript) reads ROS 2 th
 | `move` / `dock` requests | nav2 `NavigateToPose` action goal |
 | `customCommand` requests | `/inorbit/custom_command` (`std_msgs/String`) |
 
-Switching back to the ROS2 agent is `docker compose up` (default profile) plus `oro apply -f oro-config/ros2/config.yaml`, and `iso21423.robots.enabled: false` in ingest.
+Switching back to the ROS2 agent is `COMPOSE_PROFILES=agent docker compose up` plus `oro apply -f oro-config/ros2/config.yaml`, and `iso21423.robots.enabled: false` in ingest.

@@ -105,7 +105,7 @@ app/
 ├── tests/
 │   └── main.js                      # Test entry point
 ├── .meteor/
-│   ├── release                      # Meteor version (3.4)
+│   ├── release                      # Meteor version (3.5.3)
 │   └── packages                     # Meteor packages
 ├── package.json
 └── run.sh                           # Dev start script

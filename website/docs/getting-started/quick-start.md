@@ -15,8 +15,8 @@ These manual steps work in under 10 minutes. The `start-local-env.sh` helper (st
 
 | Tool | Version | Install |
 |------|---------|---------|
-| **Node.js** | v22 | Via [nvm](https://github.com/nvm-sh/nvm) |
-| **Meteor** | 3.4 | `npx meteor` |
+| **Node.js** | v24 | Via [nvm](https://github.com/nvm-sh/nvm) |
+| **Meteor** | 3.5.3 | `npx meteor` |
 | **Docker** | With Compose plugin | `docker compose` command |
 | **Terraform** | Latest | [hashicorp.com](https://developer.hashicorp.com/terraform) |
 | **tmux** | Any | Via your package manager |
@@ -29,31 +29,24 @@ git clone https://github.com/OpenRobOps/oro.git
 cd oro
 ```
 
-## 2. Generate Configuration Files
+## 2. Configure Sign-In and Generate Settings
 
-OpenRobOps uses Terraform to generate settings files with randomized credentials for inter-service communication.
+OpenRobOps uses Terraform to generate `app/settings.json` and `ingest/settings.json` with randomized credentials for inter-service communication.
 
-```bash
-# Preview what will be generated (optional)
-./scripts/generate-settings.sh --plan
+### Configure Authentication (`terraform/local.tfvars`)
 
-# Generate and write settings files
-./scripts/generate-settings.sh
-```
+At least **one authentication method** (`smtp_url`, Google OAuth, or GitHub OAuth) **must** be configured before you can sign in — without any configured, `public.oauthProviders` is empty and `http://localhost:3000/` displays **"Sign in to continue"** with no login controls.
 
-This creates `app/settings.json` and `ingest/settings.json` with MQTT credentials, encryption keys, and service URLs.
-
-Secrets are Terraform `random_*` resources persisted in state, so the script is
-safe to re-run: it preserves the existing MQTT master password, encryption keys,
-peer key, and robot API key. To force-rotate all secrets run
-`./scripts/generate-settings.sh --clean` — note this invalidates credentials
-already handed out to connected robots.
-
-### Optional: Configure OAuth
-
-To enable Google or GitHub login, create `terraform/local.tfvars`:
+Create `terraform/local.tfvars` with at least one sign-in method and list your address in `admin_emails` so your first sign-in is automatically granted the `admin` role (otherwise new accounts have no role and land on an access-request screen):
 
 ```hcl
+# Administrators — users whose sign-in email matches one of these are
+# granted the "admin" role automatically when their account is created.
+admin_emails = ["you@example.com"]
+
+# Email passwordless login (6-digit one-time codes)
+# smtp_url = "smtp://USER:PASS@SOME_SMTP_SERVER:PORT"
+
 # Google OAuth
 # oauth_google_client_id = "your-client-id"
 # oauth_google_secret    = "your-secret"
@@ -63,21 +56,54 @@ To enable Google or GitHub login, create `terraform/local.tfvars`:
 # oauth_github_secret    = "your-secret"
 # Note: a GitHub App must be granted the "Email addresses" (read-only) account
 # permission, or the user's email cannot be retrieved on sign-in.
-
-# Email passwordless login
-# smtp_url = "smtp://USER:PASS@SOME_SMTP_SERVER:PORT"
-
-# Administrators — users whose sign-in email matches one of these are
-# granted the "admin" role automatically when their account is created.
-# admin_emails = ["you@example.com"]
 ```
 
-Then re-run `./scripts/generate-settings.sh`.
+:::tip[Local sign-in without external OAuth or SMTP]
+For local development, you can run a local catch-all SMTP inbox such as [Mailpit](https://github.com/axllent/mailpit) instead of registering an OAuth app:
 
-Set `admin_emails` to your own address so your first sign-in is an administrator
-with no extra steps.
+```bash
+docker run -d --name oro-mailpit -p 1025:1025 -p 8025:8025 axllent/mailpit
+```
+
+Then set in `terraform/local.tfvars`:
+
+```hcl
+smtp_url     = "smtp://localhost:1025/?ignoreTLS=true"
+admin_emails = ["admin@local.dev"]
+```
+
+Sign in with `admin@local.dev` and read the 6-digit login code at **http://localhost:8025/**.
+:::
+
+### Generate Settings Files
+
+```bash
+# Preview what will be generated (optional)
+./scripts/generate-settings.sh --plan
+
+# Generate and write settings files
+./scripts/generate-settings.sh
+```
+
+This creates `app/settings.json` and `ingest/settings.json` with MQTT credentials, encryption keys, and service URLs. (If `app` is already running when you re-run `generate-settings.sh`, restart `app` so Meteor reloads `app/settings.json`.)
+
+Secrets are Terraform `random_*` resources persisted in state, so the script is
+safe to re-run: it preserves the existing MQTT master password, encryption keys,
+peer key, and robot API key. To force-rotate all secrets run
+`./scripts/generate-settings.sh --clean` — note this invalidates credentials
+already handed out to connected robots.
 
 ## 3. Install Dependencies
+
+`ingest/` installs `@openrobops/iso21423` from GitHub Packages (`npm.pkg.github.com`, configured in `ingest/.npmrc`), which **requires authentication even for public packages**. Configure a GitHub **Personal Access Token (classic)** (`ghp_...`) with the `read:packages` scope in your user `~/.npmrc` (fine-grained `github_pat_...` tokens are not supported by `npm.pkg.github.com`; do not add tokens to the git-tracked `ingest/.npmrc`):
+
+```bash
+npm config set //npm.pkg.github.com/:_authToken="<your-github-classic-pat>"
+# Or, if using the GitHub CLI:
+# gh auth refresh -h github.com -s read:packages && npm config set //npm.pkg.github.com/:_authToken="$(gh auth token)"
+```
+
+Then install packages in both services:
 
 ```bash
 cd app && npm install
